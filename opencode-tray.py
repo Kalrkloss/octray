@@ -117,7 +117,7 @@ def get_bg_color(pct: int, thresholds: dict) -> tuple:
     return (60, 60, 70)         # default dark
 
 
-def generate_icon(pct: int, thresholds: dict, size: int = 18) -> str:
+def generate_icon(pct: int, thresholds: dict, size: int = 24) -> str:
     """Draw the opencode O with threshold colors only on the lighter parts.
     Background stays neutral dark."""
     ICON_DIR.mkdir(parents=True, exist_ok=True)
@@ -139,31 +139,26 @@ def generate_icon(pct: int, thresholds: dict, size: int = 18) -> str:
 
     from PIL import Image, ImageDraw
 
-    # Background square with rounded corners
-    bg_size = size + 2
-    bg_img = Image.new("RGBA", (bg_size, bg_size), (*bg, 255))
-    mask = Image.new("L", (bg_size, bg_size), 0)
-    mask_draw = ImageDraw.Draw(mask)
-    mask_draw.rounded_rectangle([1, 1, bg_size - 2, bg_size - 2], radius=3, fill=255)
-    bg_img.putalpha(mask)
+    # Icon at exact tray size, no extra padding
+    bg_img = Image.new("RGBA", (size, size), (*bg, 255))
+    draw = ImageDraw.Draw(bg_img)
 
-    # Draw the O glyph directly with threshold-colored light parts
-    sc = 1.0
-    ox = (bg_size - 24 * sc) / 2
-    oy = (bg_size - 42 * sc) / 2
+    # Draw the O glyph directly, scaled to fill the icon
+    margin = 1
+    avail = size - 2 * margin
+    sc = min(avail / 24, avail / 42)  # O is 24x42 in the SVG
+    ox = (size - 24 * sc) / 2
+    oy = (size - 42 * sc) / 2
     def sr(x1, y1, x2, y2):
         return (ox + x1*sc, oy + y1*sc, ox + x2*sc, oy + y2*sc)
 
-    draw = ImageDraw.Draw(bg_img)
-
-    # Dark mode colors (always, since background is dark)
-    dark_fill = (60, 55, 55)       # dark inner part — always stays dark
+    dark_fill = (55, 50, 50)       # dark inner part — always stays dark
     light_part = accent            # lighter part — takes threshold color
 
-    # Inner top block (the light/highlight part)
-    draw.rectangle(sr(6, 18, 18, 30), fill=light_part)
     # Outer frame (the ring)
     draw.rectangle(sr(0, 6, 24, 36), fill=light_part)
+    # Inner top block (the light/highlight part)
+    draw.rectangle(sr(6, 18, 18, 30), fill=light_part)
     # Cut out inner (reveals dark fill underneath)
     draw.rectangle(sr(6, 12, 18, 30), fill=dark_fill)
 
