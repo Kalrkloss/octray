@@ -100,6 +100,32 @@ def save_config(cfg: dict):
     CONFIG_PATH.write_text(json.dumps(cfg, indent=2) + "\n")
 
 
+def fmt_reset(text: str) -> str:
+    """Convert 'X hours Y minutes' or 'X day Y hours' into dd:hh:mm format."""
+    if not text or text == "?":
+        return "?"
+    d, h, m = 0, 0, 0
+    parts = text.lower().replace(",", "").split()
+    for i, w in enumerate(parts):
+        try:
+            n = int(w)
+            if i + 1 < len(parts):
+                unit = parts[i + 1]
+                if unit.startswith("day"):
+                    d += n
+                elif unit.startswith("hour"):
+                    h += n
+                elif unit.startswith("min"):
+                    m += n
+        except ValueError:
+            continue
+    h += m // 60
+    m = m % 60
+    d += h // 24
+    h = h % 24
+    return f"{d}:{h:02d}:{m:02d}"
+
+
 def bar(pct: float, width: int = 10) -> str:
     filled = round(min(pct, 100) / 100 * width)
     return "█" * filled + "░" * (width - filled)
@@ -248,9 +274,9 @@ class OpenCodeTray:
 
         # Tooltip text
         lines = ["OpenCode Go Allowance", "─" * 34]
-        lines.append(f"5-hour   {p5h:3d}%  {bar(p5h)}  reset {resets.get('5h', '?')}")
-        lines.append(f"Weekly   {pwk:3d}%  {bar(pwk)}  reset {resets.get('weekly', '?')}")
-        lines.append(f"Monthly  {pmo:3d}%  {bar(pmo)}  reset {resets.get('monthly', '?')}")
+        lines.append(f"5-hour   {p5h:3d}%  {bar(p5h)}  reset {fmt_reset(resets.get('5h', '?'))}")
+        lines.append(f"Weekly   {pwk:3d}%  {bar(pwk)}  reset {fmt_reset(resets.get('weekly', '?'))}")
+        lines.append(f"Monthly  {pmo:3d}%  {bar(pmo)}  reset {fmt_reset(resets.get('monthly', '?'))}")
         lines.append("─" * 34)
         lines.append(f"Source: {source}")
         if COOKIE_PATH.exists():
