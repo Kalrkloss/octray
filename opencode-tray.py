@@ -237,9 +237,9 @@ class OpenCodeTray:
         pcts = data.get("percentages", {})
         resets = data.get("resets", {})
 
-        p5h = pcts.get("5h", 0)
-        pwk = pcts.get("weekly", 0)
-        pmo = pcts.get("monthly", 0)
+        p5h = min(pcts.get("5h", 0), 100)
+        pwk = min(pcts.get("weekly", 0), 100)
+        pmo = min(pcts.get("monthly", 0), 100)
         overall = max(p5h, pwk, pmo)
         self.current_overall = overall
         # Generate icon
@@ -248,9 +248,9 @@ class OpenCodeTray:
 
         # Tooltip text
         lines = ["OpenCode Go Allowance", "─" * 34]
-        lines.append(f"5-hour    {p5h:3d}%  {bar(p5h)}  reset {resets.get('5h', '?')}")
-        lines.append(f"Weekly    {pwk:3d}%  {bar(pwk)}  reset {resets.get('weekly', '?')}")
-        lines.append(f"Monthly   {pmo:3d}%  {bar(pmo)}  reset {resets.get('monthly', '?')}")
+        lines.append(f"{'5-hour':8s} {p5h:3d}%  {bar(p5h)}  reset {resets.get('5h', '?')}")
+        lines.append(f"{'Weekly':8s} {pwk:3d}%  {bar(pwk)}  reset {resets.get('weekly', '?')}")
+        lines.append(f"{'Monthly':8s} {pmo:3d}%  {bar(pmo)}  reset {resets.get('monthly', '?')}")
         lines.append("─" * 34)
         lines.append(f"Source: {source}")
         if COOKIE_PATH.exists():
