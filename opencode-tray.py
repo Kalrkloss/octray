@@ -14,10 +14,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import gi
-gi.require_version("AyatanaAppIndicator3", "0.1")
 gi.require_version("Gtk", "3.0")
-from gi.repository import AyatanaAppIndicator3 as AppIndicator
-from gi.repository import Gtk, GLib
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, GLib, Gdk, GdkPixbuf, Pango
 
 from PIL import Image, ImageDraw
 
@@ -175,16 +174,16 @@ class OpenCodeTray:
         self.current_thresholds = self.config.get("thresholds",
                                                     DEFAULT_CONFIG["thresholds"])
 
-        self.indicator = AppIndicator.Indicator.new(
-            "opencode-tray",
-            "opencode-tray",
-            AppIndicator.IndicatorCategory.APPLICATION_STATUS,
-        )
-        self.indicator.set_status(AppIndicator.IndicatorStatus.ACTIVE)
-        # Set a fallback label
-        self.indicator.set_label("OC", "")
+        self.icon = Gtk.StatusIcon()
+        self.icon.set_tooltip_text("OpenCode Go")
+        self.icon.connect("popup-menu", self._on_popup_menu)
         self._rebuild()
         GLib.timeout_add_seconds(60, self._rebuild)
+
+    def _on_popup_menu(self, _icon, button, time):
+        self._rebuild_menu()
+        self.menu.show_all()
+        self.menu.popup(None, None, None, None, button, time)
 
     def _rebuild(self):
         self.config = load_config()
@@ -192,7 +191,7 @@ class OpenCodeTray:
                                                     DEFAULT_CONFIG["thresholds"])
         self._maybe_scrape()
         self._update_display()
-        self._rebuild_menu()
+        # Menu is rebuilt on popup
 
     def _maybe_scrape(self):
         if not COOKIE_PATH.exists():
@@ -242,15 +241,16 @@ class OpenCodeTray:
         pmo = min(pcts.get("monthly", 0), 100)
         overall = max(p5h, pwk, pmo)
         self.current_overall = overall
-        # Generate icon
+        # Set the tray icon
         icon_path = generate_icon(overall, self.current_thresholds)
-        self.indicator.set_icon_full(icon_path, f"OC {overall}%")
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(icon_path))
+        self.icon.set_from_pixbuf(pixbuf)
 
         # Tooltip text
         lines = ["OpenCode Go Allowance", "─" * 34]
-        lines.append(f"{'5-hour':8s} {p5h:3d}%  {bar(p5h)}  reset {resets.get('5h', '?')}")
-        lines.append(f"{'Weekly':8s} {pwk:3d}%  {bar(pwk)}  reset {resets.get('weekly', '?')}")
-        lines.append(f"{'Monthly':8s} {pmo:3d}%  {bar(pmo)}  reset {resets.get('monthly', '?')}")
+        lines.append(f"5-hour   {p5h:3d}%  {bar(p5h)}  reset {resets.get('5h', '?')}")
+        lines.append(f"Weekly   {pwk:3d}%  {bar(pwk)}  reset {resets.get('weekly', '?')}")
+        lines.append(f"Monthly  {pmo:3d}%  {bar(pmo)}  reset {resets.get('monthly', '?')}")
         lines.append("─" * 34)
         lines.append(f"Source: {source}")
         if COOKIE_PATH.exists():
@@ -261,9 +261,15 @@ class OpenCodeTray:
     def _rebuild_menu(self):
         self.menu = Gtk.Menu()
 
-        info = Gtk.MenuItem(label=self.tooltip)
-        info.set_sensitive(False)
-        self.menu.append(info)
+        # Build each line as a separate menu item with monospace font
+        for line in self.tooltip.split("\n"):
+            item = Gtk.MenuItem()
+            label = Gtk.Label(label=line)
+            label.override_font(Pango.FontDescription("monospace 9"))
+            label.set_xalign(0.0)
+            item.add(label)
+            item.set_sensitive(False)
+            self.menu.append(item)
         self.menu.append(Gtk.SeparatorMenuItem())
 
         # Refresh now
@@ -303,7 +309,6 @@ class OpenCodeTray:
         self.menu.append(item_quit)
 
         self.menu.show_all()
-        self.indicator.set_menu(self.menu)
 
     def _on_refresh(self, _widget):
         # Force immediate scrape
