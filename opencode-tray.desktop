@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=OpenCode Tray
+Comment=Shows OpenCode usage and allowance in the system tray
+Exec=/home/keiner/.local/bin/opencode-tray.py
+Terminal=false
+X-GNOME-Autostart-enabled=true

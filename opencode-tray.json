@@ -1,0 +1,18 @@
+{
+  "percentages": {
+    "5h": 1,
+    "weekly": 0,
+    "monthly": 15
+  },
+  "resets": {
+    "5h": "?",
+    "weekly": "?",
+    "monthly": "?"
+  },
+  "thresholds": {
+    "yellow": 75,
+    "orange": 75,
+    "red": 99
+  },
+  "last_updated": null
+}
