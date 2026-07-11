@@ -117,7 +117,7 @@ def get_bg_color(pct: int, thresholds: dict) -> tuple:
     return (60, 60, 70)         # default dark
 
 
-def generate_icon(pct: int, thresholds: dict, size: int = 22) -> str:
+def generate_icon(pct: int, thresholds: dict, size: int = 18) -> str:
     """Draw the opencode O with threshold colors only on the lighter parts.
     Background stays neutral dark."""
     ICON_DIR.mkdir(parents=True, exist_ok=True)
@@ -140,7 +140,7 @@ def generate_icon(pct: int, thresholds: dict, size: int = 22) -> str:
     from PIL import Image, ImageDraw
 
     # Background square with rounded corners
-    bg_size = size + 4
+    bg_size = size + 2
     bg_img = Image.new("RGBA", (bg_size, bg_size), (*bg, 255))
     mask = Image.new("L", (bg_size, bg_size), 0)
     mask_draw = ImageDraw.Draw(mask)
