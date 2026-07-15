@@ -218,6 +218,12 @@ class OpenCodeTray:
         self._maybe_scrape()
         self._update_display()
         # Menu is rebuilt on popup
+        return True  # keep the 60-second auto-refresh timer alive
+
+    def _rebuild_from_cache(self):
+        """Update the display from cache without triggering a new scrape."""
+        self._update_display()
+        # One-shot: called after a manual refresh delay
 
     def _maybe_scrape(self):
         if not COOKIE_PATH.exists():
@@ -231,9 +237,11 @@ class OpenCodeTray:
             except:
                 pass
         subprocess.Popen(
-            ["~/.local/venv/scraper/bin/python3", "~/.local/bin/opencode-scrape.py"],
+            [
+                str(Path.home() / ".local/venv/scraper/bin/python3"),
+                str(Path.home() / ".local/bin/opencode-scrape.py"),
+            ],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            shell=True
         )
 
     def _get_percentages(self):
@@ -339,12 +347,15 @@ class OpenCodeTray:
     def _on_refresh(self, _widget):
         # Force immediate scrape
         subprocess.Popen(
-            ["~/.local/venv/scraper/bin/python3", "~/.local/bin/opencode-scrape.py"],
+            [
+                str(Path.home() / ".local/venv/scraper/bin/python3"),
+                str(Path.home() / ".local/bin/opencode-scrape.py"),
+            ],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            shell=True
         )
-        # Schedule a UI rebuild in 10 seconds to pick up new data
-        GLib.timeout_add_seconds(10, self._rebuild)
+        # Schedule a UI update in 15 seconds to pick up new data
+        # (Playwright needs time to launch Chrome, load the page, and extract text)
+        GLib.timeout_add_seconds(15, self._rebuild_from_cache)
 
     def _on_set_threshold(self, _widget, key):
         """Open a simple dialog to set a threshold value."""
