@@ -250,12 +250,12 @@ class OpenCodeTray:
             try:
                 cache = json.loads(CACHE_PATH.read_text())
                 age = datetime.now(timezone.utc).timestamp() - cache.get("timestamp", 0)
-                if age < 600:
-                    mapped = {"percentages": {}, "resets": {}}
-                    for src_key, dst_key in key_map.items():
-                        mapped["percentages"][dst_key] = cache.get("percentages", {}).get(src_key, 0)
-                        mapped["resets"][dst_key] = cache.get("resets", {}).get(src_key, "?")
-                    return mapped, "live"
+                mapped = {"percentages": {}, "resets": {}}
+                for src_key, dst_key in key_map.items():
+                    mapped["percentages"][dst_key] = cache.get("percentages", {}).get(src_key, 0)
+                    mapped["resets"][dst_key] = cache.get("resets", {}).get(src_key, "?")
+                source = "live" if age < 600 else f"cached ({int(age/60)}m ago)"
+                return mapped, source
             except:
                 pass
         raw = self.config
